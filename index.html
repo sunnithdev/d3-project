@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Car Data Visualizations</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+    .container {
+      width: 80%;
+      margin: auto;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    h3 {
+      margin-bottom: 10px;
+    }
+    p.description {
+      font-size: 14px;
+      margin-bottom: 20px;
+      color: #555;
+    }
+    .tab {
+      overflow: hidden;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 20px;
+    }
+    .tab button {
+      background-color: inherit;
+      float: left;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      padding: 14px 16px;
+      transition: 0.3s;
+      font-size: 16px;
+    }
+    .tab button:hover {
+      background-color: #ddd;
+    }
+    .tab button.active {
+      background-color: #ccc;
+    }
+    .tabcontent {
+      display: none;
+      padding: 20px 0;
+      border-top: none;
+    }
+    .tabcontent svg {
+      width: 100%;
+      height: 500px;
+    }
+    .tooltip {
+      position: absolute;
+      text-align: center;
+      width: 120px;
+      height: auto;
+      padding: 8px;
+      background: lightsteelblue;
+      border: 0px;
+      border-radius: 8px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Car Data Visualizations</h1>
+  
+  <div class="tab">
+    <button class="tablinks" onclick="openChart(event, 'Chart1')">Top 10 Cars by Horsepower</button>
+    <button class="tablinks" onclick="openChart(event, 'Chart2')">Horsepower vs. Miles per Gallon</button>
+    <button class="tablinks" onclick="openChart(event, 'Chart3')">Distribution of Car Origins</button>
+    <button class="tablinks" onclick="openChart(event, 'Chart4')">Trend of Miles per Gallon Over the Years</button>
+    <button class="tablinks" onclick="openChart(event, 'Chart5')">Average Weight of Cars by Origin</button>
+    <button class="tablinks" onclick="openChart(event, 'Chart6')">Trend of Average Displacement Over the Years</button>
+  </div>
+
+  <div id="Chart1" class="tabcontent">
+    <h3>Top 10 Cars by Horsepower</h3>
+    <p class="description">This bubble chart displays the top 10 cars based on their horsepower. The size of the bubbles represents the horsepower of each car. This visualization helps identify the most powerful cars in the dataset.</p>
+    <div id="bubble-chart"></div>
+  </div>
+
+  <div id="Chart2" class="tabcontent">
+    <h3>Horsepower vs. Miles per Gallon</h3>
+    <p class="description">This scatter plot visualizes the relationship between horsepower and miles per gallon. Each point represents a car, showing how its power correlates with fuel efficiency. This chart helps in understanding the trade-offs between performance and fuel economy.</p>
+    <div id="scatter-plot"></div>
+  </div>
+
+  <div id="Chart3" class="tabcontent">
+    <h3>Distribution of Car Origins</h3>
+    <p class="description">This pie chart illustrates the distribution of cars by their origin (USA, Europe, Japan). The chart shows the proportion of cars from each region, giving insights into the global distribution of car manufacturing in the dataset.</p>
+    <div id="pie-chart"></div>
+  </div>
+
+  <div id="Chart4" class="tabcontent">
+    <h3>Trend of Miles per Gallon Over the Years</h3>
+    <p class="description">This line chart shows how the average miles per gallon (MPG) has changed over the years. It tracks the trend in fuel efficiency across the dataset, helping to analyze improvements or declines in car efficiency over time.</p>
+    <div id="line-chart"></div>
+  </div>
+
+  <div id="Chart5" class="tabcontent">
+    <h3>Average Weight of Cars by Origin</h3>
+    <p class="description">This simple map-like visualization represents the average weight of cars by their origin. The bars are colored based on the origin, providing a quick visual comparison of car weights from different regions.</p>
+    <div id="map-chart"></div>
+  </div>
+
+  <div id="Chart6" class="tabcontent">
+    <h3>Trend of Average Displacement Over the Years</h3>
+    <p class="description">This area chart tracks the trend of average engine displacement over the years. It highlights changes in engine size across different time periods, giving insights into the evolution of engine designs in the dataset.</p>
+    <div id="area-chart"></div>
+  </div>
+</div>
+
+<script>
+function openChart(evt, chartName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(chartName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+document.getElementsByClassName("tablinks")[0].click();
+</script>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+  // Fetch and process the data
+  d3.json('./cars2.json').then(data => {
+    // Chart 1: Top 10 Cars by Horsepower (Bubble Chart)
+    const topCars = data.sort((a, b) => b.Horsepower - a.Horsepower).slice(0, 10);
+
+    const margin = {top: 20, right: 30, bottom: 40, left: 40},
+          width = 960 - margin.left - margin.right,
+          height = 500 - margin.top - margin.bottom;
+
+    const svg1 = d3.select("#bubble-chart").append("svg")
+                  .attr("width", width + margin.left + margin.right)
+                  .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                  .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x1 = d3.scaleLinear()
+                 .domain([0, d3.max(topCars, d => d.Horsepower)])
+                 .range([0, width]);
+
+    const y1 = d3.scaleLinear()
+                 .domain([0, topCars.length])
+                 .range([height, 0]);
+
+    const r1 = d3.scaleSqrt()
+                 .domain([0, d3.max(topCars, d => d.Horsepower)])
+                 .range([0, 40]);
+
+    svg1.selectAll("circle")
+        .data(topCars)
+        .enter().append("circle")
+        .attr("cx", d => x1(d.Horsepower))
+        .attr("cy", (d, i) => y1(i))
+        .attr("r", d => r1(d.Horsepower))
+        .style("fill", "steelblue")
+        .append("title")
+        .text(d => `${d.Name}\nHorsepower: ${d.Horsepower}`);
+
+    // Chart 2: Horsepower vs. Miles per Gallon (Scatter Plot)
+    const svg2 = d3.select("#scatter-plot").append("svg")
+                  .attr("width", width + margin.left + margin.right)
+                  .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                  .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x2 = d3.scaleLinear()
+                 .domain([0, d3.max(data, d => d.Horsepower)])
+                 .range([0, width]);
+
+    const y2 = d3.scaleLinear()
+                 .domain([0, d3.max(data, d => d.Miles_per_Gallon)])
+                 .range([height, 0]);
+
+    svg2.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x2));
+
+    svg2.append("g")
+        .call(d3.axisLeft(y2));
+
+    svg2.selectAll("dot")
+        .data(data)
+        .enter().append("circle")
+        .attr("cx", d => x2(d.Horsepower))
+        .attr("cy", d => y2(d.Miles_per_Gallon))
+        .attr("r", 3.5)
+        .style("fill", "steelblue")
+        .append("title")
+        .text(d => `${d.Name}\nHorsepower: ${d.Horsepower}\nMPG: ${d.Miles_per_Gallon}`);
+
+    // Chart 3: Distribution of Car Origins (Pie Chart)
+    const originCounts = Array.from(d3.rollup(data, v => v.length, d => d.Origin));
+
+    const svg3 = d3.select("#pie-chart").append("svg")
+                  .attr("width", width + margin.left + margin.right)
+                  .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                  .attr("transform", `translate(${width / 2},${height / 2})`);
+
+    const radius = Math.min(width, height) / 2;
+
+    const pie = d3.pie()
+                  .value(d => d[1]);
+
+    const arc = d3.arc()
+                  .outerRadius(radius - 10)
+                  .innerRadius(0);
+
+    const g = svg3.selectAll(".arc")
+                  .data(pie(originCounts))
+                  .enter().append("g")
+                  .attr("class", "arc");
+
+    g.append("path")
+     .attr("d", arc)
+     .style("fill", d => {
+       switch (d.data[0]) {
+         case 'USA': return 'blue';
+         case 'Europe': return 'green';
+         case 'Japan': return 'red';
+       }
+     })
+     .append("title")
+     .text(d => `${d.data[0]}: ${d.data[1]}`);
+
+    g.append("text")
+     .attr("transform", d => `translate(${arc.centroid(d)})`)
+     .attr("dy", ".35em")
+     .style("text-anchor", "middle")
+     .text(d => d.data[0]);
+
+    // Chart 4: Trend of Miles per Gallon Over the Years (Line Chart)
+    const nestedData = Array.from(d3.rollup(data, v => d3.mean(v, d => d.Miles_per_Gallon), d => d.Year), ([key, value]) => ({key, value}));
+
+    const x4 = d3.scaleTime()
+                 .domain(d3.extent(nestedData, d => new Date(d.key)))
+                 .range([0, width]);
+
+    const y4 = d3.scaleLinear()
+                 .domain([0, d3.max(nestedData, d => d.value)])
+                 .range([height, 0]);
+
+    const svg4 = d3.select("#line-chart").append("svg")
+                  .attr("width", width + margin.left + margin.right)
+                  .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                  .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const line = d3.line()
+                   .x(d => x4(new Date(d.key)))
+                   .y(d => y4(d.value));
+
+    svg4.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x4));
+
+    svg4.append("g")
+        .call(d3.axisLeft(y4));
+
+    svg4.append("path")
+        .datum(nestedData)
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 1.5)
+        .attr("d", line);
+
+    svg4.selectAll(".dot")
+        .data(nestedData)
+        .enter().append("circle")
+        .attr("cx", d => x4(new Date(d.key)))
+        .attr("cy", d => y4(d.value))
+        .attr("r", 5)
+        .style("fill", "steelblue")
+        .append("title")
+        .text(d => `Year: ${d.key}\nAverage MPG: ${d.value}`);
+
+    // Chart 5: Average Weight of Cars by Origin (Choropleth Map)
+    const avgWeightByOrigin = Array.from(d3.rollup(data, v => d3.mean(v, d => d.Weight_in_lbs), d => d.Origin), ([key, value]) => ({key, value}));
+
+    const svg5 = d3.select("#map-chart").append("svg")
+                  .attr("width", width + margin.left + margin.right)
+                  .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                  .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const countries = ['USA', 'Europe', 'Japan'];
+
+    svg5.selectAll("rect")
+        .data(avgWeightByOrigin)
+        .enter().append("rect")
+        .attr("x", (d, i) => i * (width / countries.length))
+        .attr("y", d => height - (height * d.value / d3.max(avgWeightByOrigin, d => d.value)))
+        .attr("width", width / countries.length - 10)
+        .attr("height", d => (height * d.value / d3.max(avgWeightByOrigin, d => d.value)))
+        .attr("fill", d => {
+          switch (d.key) {
+            case 'USA': return 'blue';
+            case 'Europe': return 'green';
+            case 'Japan': return 'red';
+          }
+        })
+        .append("title")
+        .text(d => `${d.key}\nAverage Weight: ${Math.round(d.value)} lbs`);
+
+    // Chart 6: Trend of Average Displacement Over the Years (Area Chart)
+    const nestedDisplacementData = Array.from(d3.rollup(data, v => d3.mean(v, d => d.Displacement), d => d.Year), ([key, value]) => ({key, value}));
+
+    const x6 = d3.scaleTime()
+                 .domain(d3.extent(nestedDisplacementData, d => new Date(d.key)))
+                 .range([0, width]);
+
+    const y6 = d3.scaleLinear()
+                 .domain([0, d3.max(nestedDisplacementData, d => d.value)])
+                 .range([height, 0]);
+
+    const svg6 = d3.select("#area-chart").append("svg")
+                  .attr("width", width + margin.left + margin.right)
+                  .attr("height", height + margin.top + margin.bottom)
+                  .append("g")
+                  .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const area = d3.area()
+                   .x(d => x6(new Date(d.key)))
+                   .y0(height)
+                   .y1(d => y6(d.value));
+
+    svg6.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x6));
+
+    svg6.append("g")
+        .call(d3.axisLeft(y6));
+
+    svg6.append("path")
+        .datum(nestedDisplacementData)
+        .attr("fill", "steelblue")
+        .attr("d", area);
+
+    svg6.selectAll(".dot")
+        .data(nestedDisplacementData)
+        .enter().append("circle")
+        .attr("cx", d => x6(new Date(d.key)))
+        .attr("cy", d => y6(d.value))
+        .attr("r", 5)
+        .style("fill", "steelblue")
+        .append("title")
+        .text(d => `Year: ${d.key}\nAverage Displacement: ${d.value}`);
+  });
+</script>
+</body>
+</html>
